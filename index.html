@@ -263,47 +263,50 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
 
 
 
+
+     
                         
-                            using RabbitMQ.Client;
-                            using System.Text;
+
+                        using RabbitMQ.Client;
+                        using System.Text;
+                                                
+                        var factory = new ConnectionFactory() { HostName = &amp;quot;localhost&amp;quot; };
+                        using (var connection = factory.CreateConnection())
+                        using (var channel = connection.CreateModel())
+                        {
+                            channel.QueueDeclare(queue: &amp;quot;RabbitMqDotNetTutorial.01&amp;quot;,
+                                durable: false,
+                                exclusive: false,
+                                autoDelete: false,
+                                arguments: null);
                         
-                            var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
-                            using (var connection = factory.CreateConnection())
-                            using (var channel = connection.CreateModel())
+                            while (true)
                             {
-                                channel.QueueDeclare(queue: &quot;RabbitMqDotNetTutorial.01&quot;,
-                                    durable: false,
-                                    exclusive: false,
-                                    autoDelete: false,
-                                    arguments: null);
-                            
-                                while (true)
-                                {
-                                    Console.WriteLine(AppInfo.Value);
-                            
-                                    Console.WriteLine(&quot;Write what you want to send&quot;);
-                                    Console.WriteLine(&quot;Write nothing to exit.&quot;);
-                            
-                                    string usermessage = Console.ReadLine();
-                            
-                                    if (string.IsNullOrWhiteSpace(usermessage))
-                                        break;
-                            
-                                    string message = usermessage;
-                                    var body = Encoding.UTF8.GetBytes(message);
-                            
-                                    channel.BasicPublish(exchange: &quot;&quot;,
-                                        routingKey: &quot;RabbitMqDotNetTutorial.01&quot;,
-                                        basicProperties: null, body);
-                            
-                                    Console.WriteLine(&quot;&quot;);
-                                    Console.ForegroundColor = ConsoleColor.Green;
-                                    Console.WriteLine(&quot;\tSent {0}&quot;, message);
-                                    Console.ForegroundColor = ConsoleColor.Gray;
-                                    Console.WriteLine(&quot;&quot;);
-                                }
-                            
+                                Console.WriteLine(AppInfo.Value);
+                        
+                                Console.WriteLine(&amp;quot;Write what you want to send&amp;quot;);
+                                Console.WriteLine(&amp;quot;Write nothing to exit.&amp;quot;);
+                        
+                                string usermessage = Console.ReadLine();
+                        
+                                if (string.IsNullOrWhiteSpace(usermessage))
+                                    break;
+                        
+                                string message = usermessage;
+                                var body = Encoding.UTF8.GetBytes(message);
+                        
+                                channel.BasicPublish(exchange: &amp;quot;&amp;quot;,
+                                    routingKey: &amp;quot;RabbitMqDotNetTutorial.01&amp;quot;,
+                                    basicProperties: null, body);
+                        
+                                Console.WriteLine(&amp;quot;&amp;quot;);
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.WriteLine(&amp;quot;\tSent {0}&amp;quot;, message);
+                                Console.ForegroundColor = ConsoleColor.Gray;
+                                Console.WriteLine(&amp;quot;&amp;quot;);
                             }
+                        
+                        }
                     </code>
                 </pre>
             </div>
@@ -336,48 +339,51 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
 
 
 
-                            using RabbitMQ.Client.Events;
-                            using RabbitMQ.Client;
-                            using System.Text;
 
-                            var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
 
-                            using (var connection = factory.CreateConnection())
-                            using (var channel = connection.CreateModel())
+
+                        using RabbitMQ.Client.Events;
+                        using RabbitMQ.Client;
+                        using System.Text;
+                        
+                        var factory = new ConnectionFactory() { HostName = &amp;quot;localhost&amp;quot; };
+                        
+                        using (var connection = factory.CreateConnection())
+                        using (var channel = connection.CreateModel())
+                        {
+                            channel.QueueDeclare(queue: &amp;quot;RabbitMqDotNet6Tutorial.01&amp;quot;,
+                            durable: false,
+                                exclusive: false, autoDelete: false, arguments: null);
+                        
+                            Console.WriteLine(AppInfo.Value);
+                            Console.WriteLine(&amp;quot; Waiting for messages.&amp;quot;);
+                        
+                            var consumer = new EventingBasicConsumer(channel);
+                        
+                            consumer.Received += (model, ea) =&amp;gt;
                             {
-                                channel.QueueDeclare(queue: &quot;RabbitMqDotNet6Tutorial.01&quot;,
-                                durable: false,
-                                    exclusive: false, autoDelete: false, arguments: null);
-                            
-                                Console.WriteLine(AppInfo.Value);
-                                Console.WriteLine(&quot; Waiting for messages.&quot;);
-                            
-                                var consumer = new EventingBasicConsumer(channel);
-                            
-                                consumer.Received += (model, ea) =&gt;
-                                {
-                                    var message = Encoding.UTF8.GetString(ea.Body.ToArray());
-                                    Console.Write(&quot;-&gt; Received: &quot;);
-                                    Console.ForegroundColor = ConsoleColor.Green;
-                                    Console.WriteLine(message);
-                                    Console.ForegroundColor = ConsoleColor.Gray;
-                            
-                                    //channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
-                                };
-                            
-                                channel.BasicConsume(queue: &quot;RabbitMqDotNet6Tutorial.01&quot;,
-                                autoAck: true, consumer: consumer);
-                            
-                            
-                                char key = &#39;z&#39;;
-                            
-                                while (key != &#39;q&#39; &amp;&amp; key != &#39;Q&#39;)
-                                {
-                                    Console.WriteLine(&quot; Press [q] or [Q] to exit.&quot;);
-                                    key = Console.ReadKey().KeyChar;
-                                }
-                            
+                                var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+                                Console.Write(&amp;quot;-&amp;gt; Received: &amp;quot;);
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.WriteLine(message);
+                                Console.ForegroundColor = ConsoleColor.Gray;
+                        
+                                //channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                            };
+                        
+                            channel.BasicConsume(queue: &amp;quot;RabbitMqDotNet6Tutorial.01&amp;quot;,
+                            autoAck: true, consumer: consumer);
+                        
+                        
+                            char key = &amp;#39;z&amp;#39;;
+                        
+                            while (key != &amp;#39;q&amp;#39; &amp;amp;&amp;amp; key != &amp;#39;Q&amp;#39;)
+                            {
+                                Console.WriteLine(&amp;quot; Press [q] or [Q] to exit.&amp;quot;);
+                                key = Console.ReadKey().KeyChar;
                             }
+                        
+                        }
                     </code>
                 </pre>
             </div>
@@ -389,20 +395,27 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 <h2 class="headerCODE GG">EasyNetQ Reciver</h2>
             </div>
             <div class="PlaceCodeHere ">
-                <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
-                    <code style="line-height: 24px !important;">
+                <pre style="font-size: 30px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 30px !important;">
 
-                            using (var bus = RabbitHutch.CreateBus(&quot;host=localhost&quot;))
+                        
+                        using EasyNetQ;
+
+                        using (var bus = RabbitHutch.CreateBus
+                            (&quot;host=localhost&quot;))
+                        {
+                            for (int i = 0; i &lt; 10; i++)
                             {
-                                for (int i = 0; i &lt; 10; i++)
-                                {
-                                    await bus.SendReceive.SendAsync(&quot;1EasyNetMQ.Queue&quot;,
-                                        new TextMessage()
-                                        { Text = i + &quot;: Hello World from EasyNetQ&quot; }
-                                    );
-                            
-                                }
-                            }                    
+                                await bus.SendReceive.SendAsync
+                                (&quot;1EasyNetMQ.Queue&quot;,
+                                    new TextMessage()
+                                    { 
+                                        Text = i + &quot;: Hello World from EasyNetQ&quot;
+                                    }
+                                );
+                        
+                            }
+                        }                        
                     </code>
                 </pre>
             </div>
@@ -414,13 +427,15 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 <h2 class="headerCODE GG">EasyNetQ Reciver</h2>
             </div>
             <div class="PlaceCodeHere ">
-                <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
-                    <code style="line-height: 24px !important;">
+                <pre style="font-size: 28px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 28px !important;">
+
                         using EasyNetQ;
 
                         using (var bus = RabbitHutch.CreateBus("host=localhost"))
                         {
-                            await bus.SendReceive.ReceiveAsync<TextMessage>("1EasyNetMQ.Queue", HandleTextMessage);
+                            await bus.SendReceive.ReceiveAsync<TextMessage>("1EasyNetMQ.Queue",
+                                HandleTextMessage);
                         
                             Console.WriteLine("Listening for messages. Hit <return> to quit.");
                             Console.ReadLine();
