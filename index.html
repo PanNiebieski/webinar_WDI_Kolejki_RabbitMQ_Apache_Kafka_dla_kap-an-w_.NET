@@ -13,6 +13,10 @@
         <link rel="stylesheet" href="vendors/prism/prism-my-white.css" />
         <link rel="stylesheet" href="vendors/prism/custom-prism.css" />
         <link rel="stylesheet" href="codegrid-white.css" />
+
+        <!-- <link rel="stylesheet" href="vendors/prism/prism-my-dark.css" />
+        <link rel="stylesheet" href="vendors/prism/custom-prism.css" />
+        <link rel="stylesheet" href="codegrid-dark.css" /> -->
     
         <meta property="og:type" content="website">
         <meta property="og:title" content="Kolejki RabbitMQ Apache Kafka dla kapłanów .NET">
@@ -398,7 +402,7 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 <pre style="font-size: 30px;overflow: hidden;  " class="language-csharp">
                     <code style="line-height: 30px !important;">
 
-                        
+
                         using EasyNetQ;
 
                         using (var bus = RabbitHutch.CreateBus
@@ -465,8 +469,8 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 <h2 class="headerCODE GG">RabbitMQ.Client Sender Example of ACK</h2>
             </div>
             <div class="PlaceCodeHere canscroll">
-                <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
-                    <code style="line-height: 24px !important;">
+                <pre style="font-size: 20px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 20px !important;">
 
 
 
@@ -486,71 +490,92 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
 
 
 
-                            var factory = new ConnectionFactory() { HostName = "localhost" };
-                            using (var connection = factory.CreateConnection())
-                            
-                            using (var channel = connection.CreateModel())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
+                        using (var connection = factory.CreateConnection())
+                        
+                        using (var channel = connection.CreateModel())
+                        {
+                            //durbale = true ponieważ chcemy aby nasze zdania istniały po restarcie
+                            channel.QueueDeclare(queue: &quot;RabbitMqDotNet6Tutorial.02&quot;, true,
+                                false, false, null);
+                        
+                            while (true)
                             {
-                                //durbale = true ponieważ chcemy aby nasze zdania istniały po restarcie
-                                channel.QueueDeclare(queue: "RabbitMqDotNet6Tutorial.02", true,
-                                    false, false, null);
-                            
-                                while (true)
-                                {
-                                    Console.WriteLine("Write [.] to increase time to do job for worker. Foreach [.]");
-                                    Console.WriteLine("Write [!] at least once. To make one worker fail job");
-                                    Console.WriteLine("Write [q] or [Q] to exit.");
-                            
-                                    string whatuserwrote = Console.ReadLine();
-                            
-                                    if (whatuserwrote == "q" || whatuserwrote == "Q")
-                                        break;
-                                    if (string.IsNullOrEmpty(whatuserwrote))
-                                        continue;
-                            
-                                    Job job = CreateJob(whatuserwrote);
-                                    string message = JsonConvert.SerializeObject(job);
-                            
-                                    var body = Encoding.UTF8.GetBytes(message);
-                            
-                                    var properties = channel.CreateBasicProperties();
-                                    properties.Persistent = true;
-                            
-                                    channel.BasicPublish("", routingKey: "RabbitMqDotNet6Tutorial.02",
-                                        properties, body);
-                            
-                                    WriteMessageOnConsole(message);
-                                }
-                            
+                                Console.WriteLine(&quot;Write [.] to increase time to do job for worker. Foreach [.]&quot;);
+                                Console.WriteLine(&quot;Write [!] at least once. To make one worker fail job&quot;);
+                                Console.WriteLine(&quot;Write [q] or [Q] to exit.&quot;);
+                        
+                                string whatuserwrote = Console.ReadLine();
+                        
+                                if (whatuserwrote == &quot;q&quot; || whatuserwrote == &quot;Q&quot;)
+                                    break;
+                                if (string.IsNullOrEmpty(whatuserwrote))
+                                    continue;
+                        
+                                Job job = CreateJob(whatuserwrote);
+                                string message = JsonConvert.SerializeObject(job);
+                        
+                                var body = Encoding.UTF8.GetBytes(message);
+                        
+                                var properties = channel.CreateBasicProperties();
+                                properties.Persistent = true;
+                        
+                                channel.BasicPublish(&quot;&quot;, routingKey: &quot;RabbitMqDotNet6Tutorial.02&quot;,
+                                    properties, body);
+                        
+                                WriteMessageOnConsole(message);
                             }
-                            
-                            
-                            void WriteMessageOnConsole(string message)
+                        
+                        }     
+                        
+                        void WriteMessageOnConsole(string message)
+                        {
+                            Console.WriteLine(&quot;&quot;);
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine(&quot;\tSent {0}&quot;, message);
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            Console.WriteLine(&quot;&quot;);
+                        }
+                        
+                        Job CreateJob(string usertext)
+                        {
+                            int howManySecondsWillJobTake = usertext.Split(&#39;.&#39;).Length - 1;
+                            bool shouldFail = usertext.IndexOf(&#39;!&#39;) &gt; 0;
+                        
+                            string message = usertext.Replace(&quot;!&quot;, &quot;&quot;)
+                                .Replace(&quot;.&quot;, &quot;&quot;);
+                        
+                            return new Job()
                             {
-                                Console.WriteLine("");
-                                Console.ForegroundColor = ConsoleColor.Green;
-                                Console.WriteLine("\tSent {0}", message);
-                                Console.ForegroundColor = ConsoleColor.Gray;
-                                Console.WriteLine("");
-                            }
-                            
-                            Job CreateJob(string usertext)
-                            {
-                                int howManySecondsWillJobTake = usertext.Split('.').Length - 1;
-                                bool shouldFail = usertext.IndexOf('!') > 0;
-                            
-                                string message = usertext.Replace("!", "")
-                                    .Replace(".", "");
-                            
-                                return new Job()
-                                {
-                                    Message = message,
-                                    HowManySecondsWillJobTake = howManySecondsWillJobTake,
-                                    Type = JobType.SendEmail,
-                                    ShouldFaillOnWorkerTwo = shouldFail
-                            
-                                };
-                            }                 
+                                Message = message,
+                                HowManySecondsWillJobTake = howManySecondsWillJobTake,
+                                Type = JobType.SendEmail,
+                                ShouldFaillOnWorkerTwo = shouldFail
+                        
+                            };
+                        }                
                     </code>
                 </pre>
             </div>
@@ -583,13 +608,36 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+                        
+
+
+
+                        
+                        using RabbitMQ.Client;
+                        using RabbitMQ.Client.Events;
+                        using System.Text;
+                        using System.Text.Json;
+
                         Console.ForegroundColor = GetRandomConsoleColor();
                         var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
                         using (var connection = factory.CreateConnection())
                         
                         using (var channel = connection.CreateModel())
                         {
-                            channel.QueueDeclare(queue: &quot;RabbitMqDotNet6Tutorial.02&quot;, durable: true, exclusive: false, autoDelete: false, arguments: null);
+                            channel.QueueDeclare(queue: &quot;RabbitMqDotNet6Tutorial.02&quot;,
+                                durable: true, 
+                                exclusive: false, autoDelete: false, arguments: null);
                         
                             channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
                         
@@ -616,20 +664,21 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                             };
                         
                         
-                            channel.BasicConsume(queue: &quot;RabbitMqDotNet6Tutorial.02&quot;, autoAck: false,
+                            channel.BasicConsume(queue: &quot;RabbitMqDotNet6Tutorial.02&quot;, 
+                                autoAck: false,
                                 consumer: consumer);
                         
                             Console.WriteLine(&quot; Press [enter] to end program.&quot;);
                             Console.ReadLine();
                         }
                         
-                        
-                        
                         ConsoleColor GetRandomConsoleColor()
                         {
                             Random _random = new Random();
                             var consoleColors = Enum.GetValues(typeof(ConsoleColor));
-                            return (ConsoleColor)consoleColors.GetValue(_random.Next(consoleColors.Length));
+
+                            return (ConsoleColor)consoleColors.
+                                GetValue(_random.Next(consoleColors.Length));
                         }                                  
                     </code>
                 </pre>
@@ -663,57 +712,111 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        using RabbitMQ.Client;
+                        using RabbitMQ.Client.Events;
+                        using System.Text;
+                        using System.Text.Json;
+                        
+                        
                         Console.ForegroundColor = GetRandomConsoleColor();
-                        var factory = new ConnectionFactory() { HostName = "localhost" };
+                        var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
                         using (var connection = factory.CreateConnection())
                         
                             while (true)
                             {
                                 using (var channel = connection.CreateModel())
                                 {
-                                    channel.QueueDeclare(queue: "RabbitMqDotNet6Tutorial.02", durable: true, exclusive: false, autoDelete: false, arguments: null);
+                                    channel.QueueDeclare(queue: &quot;RabbitMqDotNet6Tutorial.02&quot;, 
+                                    durable: true, exclusive: false, 
+                                    autoDelete: false, arguments: null);
                         
-                                    channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+                                    channel.BasicQos(prefetchSize: 0, 
+                                        prefetchCount: 1, 
+                                        global: false);
                         
-                                    Console.WriteLine(" [*] Waiting for jobs.");
+                                    Console.WriteLine(&quot; [*] Waiting for jobs.&quot;);
                         
                                     var consumer = new EventingBasicConsumer(channel);
-                                    consumer.Received += (model, ea) =>
+                                    consumer.Received += (model, ea) =&gt;
                                     {
                                         byte[] body = ea.Body.ToArray();
                                         var jobAsJsonText = Encoding.UTF8.GetString(body);
                         
-                                        Job job = JsonSerializer.Deserialize<Job>(jobAsJsonText);
+                                        Job job = JsonSerializer.Deserialize&lt;Job&gt;(jobAsJsonText);
                         
-                                        Console.WriteLine(" [>] Received {0}", job.Message);
-                                        Console.WriteLine(" [>] Received {0}", job.Type);
+                                        Console.WriteLine(&quot; [&gt;] Received {0}&quot;, job.Message);
+                                        Console.WriteLine(&quot; [&gt;] Received {0}&quot;, job.Type);
                         
                         
                                         if (job.ShouldFaillOnWorkerTwo == false)
                                         {
                                             Thread.Sleep(job.HowManySecondsWillJobTake * 500);
-                                            channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+
+                                            channel.BasicAck(deliveryTag: ea.DeliveryTag, 
+                                                multiple: false);
+
                                             Console.ForegroundColor = ConsoleColor.Green;
-                                            Console.WriteLine(" [>] Done");
+                                            Console.WriteLine(&quot; [&gt;] Done&quot;);
                                             Console.ForegroundColor = ConsoleColor.Gray;
                                         }
                                         else
                                         {
                                             Console.ForegroundColor = ConsoleColor.Red;
-                                            Console.WriteLine($" [x] Fail {job.Message}");
-                                            Console.WriteLine($" [x] Fail {job.Type}");
+                                            Console.WriteLine($&quot; [x] Fail {job.Message}&quot;);
+                                            Console.WriteLine($&quot; [x] Fail {job.Type}&quot;);
                                             Console.ForegroundColor = ConsoleColor.Gray;
                         
                                         }
                         
-                        
                                     };
-                        
-                        
-                                    channel.BasicConsume(queue: "RabbitMqDotNet6Tutorial.02", autoAck: false,
+                                              
+                                    channel.BasicConsume
+                                        (queue: &quot;RabbitMqDotNet6Tutorial.02&quot;, 
+                                        autoAck: false,
                                         consumer: consumer);
                         
-                                    Console.WriteLine(" Press [enter] to restart connection.CreateModel()");
+                                    Console.WriteLine
+                                        (&quot; Press [enter] to restart connection.CreateModel()&quot;);
                                     Console.ReadLine();
                                 }
                             }
@@ -725,33 +828,86 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                             var consoleColors = Enum.GetValues(typeof(ConsoleColor));
                             return (ConsoleColor)consoleColors.GetValue(_random.Next(consoleColors.Length));
                         }
-                                                    
+                        
+                        
+                                                
                     </code>
                 </pre>
             </div>
         </div>
     </section>
+    
 
 
 
 
 
-
-
-
-
-
-
-
-
+    <section class="slide" style="background-color:black">
+        <figure>
+            <img class="cover" src="pictures/27.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:black">
+        <figure>
+            <img class="cover" src="pictures/28.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:black">
+        <figure>
+            <img class="cover" src="pictures/29.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:black">
+        <figure>
+            <img class="cover" src="pictures/30.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:black">
+        <figure>
+            <img class="cover" src="pictures/31.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:black">
+        <figure>
+            <img class="cover" src="pictures/32.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">RabbitMQ.Client Reciver Example of ACK 2RabbitMQ.NewJob.Worker.Reciver</h2>
+                <h2 class="headerCODE GG">EasyNetQ Sender Example of ACK</h2>
             </div>
             <div class="PlaceCodeHere canscroll">
                 <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
                     <code style="line-height: 24px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -776,9 +932,12 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                         
                         while (true)
                         {
-                            Console.WriteLine(&quot;Write [.] to increase time to do job for worker. Foreach [.]&quot;);
-                            Console.WriteLine(&quot;Write [!] at least once. To make one worker fail job&quot;);
-                            Console.WriteLine(&quot;Write [q] or [Q] to exit.&quot;);
+                            Console.WriteLine
+                            (&quot;Write [.] to increase time to do job for worker. Foreach [.]&quot;);
+                            Console.WriteLine(
+                                &quot;Write [!] at least once. To make one worker fail job&quot;);
+                            Console.WriteLine
+                            (&quot;Write [q] or [Q] to exit.&quot;);
                         
                             string whatuserwrote = Console.ReadLine();
                         
@@ -827,16 +986,20 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                             Console.WriteLine(&quot;\tSent {0}&quot;, message);
                             Console.ForegroundColor = ConsoleColor.Gray;
                             Console.WriteLine(&quot;&quot;);
-                        }                                                   
+                        }
+                        
+                                            
                     </code>
                 </pre>
             </div>
         </div>
     </section>
+
+
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">RabbitMQ.Client Reciver Example of ACK 2RabbitMQ.NewJob.Worker.Reciver</h2>
+                <h2 class="headerCODE GG">EasyNetQ Reciver Example of ACK</h2>
             </div>
             <div class="PlaceCodeHere canscroll">
                 <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
@@ -860,19 +1023,18 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
 
 
 
-                        using EasyNetQ;
 
-                        //https://stackoverflow.com/questions/33180108/does-easynetq-support-nack
-                        //https://stackoverflow.com/questions/30914640/how-to-do-error-handling-with-easynetq-rabbitmq
-                        //https://stackoverflow.com/questions/56629803/how-to-accept-and-reject-ack-and-nack-messages-manually
-                        //https://stackoverflow.com/questions/60316265/easynetq-handle-manual-ack
+
+                        using EasyNetQ;
                         
-                        var connectionString = "host=localhost"; // RabbitMQ connection string
+                        var connectionString = "host=localhost"; 
+                            // RabbitMQ connection string
                         
                         using (var bus = RabbitHutch.CreateBus(connectionString))
                         {
                         
-                            var queueName = "2EasyNetMQ.NewJob.Queue"; // Replace with your queue name
+                            var queueName = "2EasyNetMQ.NewJob.Queue"; 
+                                // Replace with your queue name
                             bus.Advanced.QueueDeclare(queueName, durable: true, false, false);
                         
                             await bus.SendReceive.ReceiveAsync<Job>
@@ -913,7 +1075,7 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">RabbitMQ.Client Reciver Example of ACK 2RabbitMQ.NewJob.Worker.Reciver</h2>
+                <h2 class="headerCODE GG">EasyNetQ Reciver Example of error queque</h2>
             </div>
             <div class="PlaceCodeHere canscroll">
                 <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
@@ -936,16 +1098,25 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
 
 
 
-                        using EasyNetQ;
 
-                        //https://stackoverflow.com/questions/33180108/does-easynetq-support-nack
-                        //https://stackoverflow.com/questions/30914640/how-to-do-error-handling-with-easynetq-rabbitmq
+
+
+
+
+
+
+
+
+
+                        using EasyNetQ;
                         
-                        var connectionString = "host=localhost"; // RabbitMQ connection string
+                        var connectionString = "host=localhost"; 
+                            // RabbitMQ connection string
                         
                         using (var bus = RabbitHutch.CreateBus(connectionString))
                         {
-                            var queueName = "2EasyNetMQ.NewJob.Queue"; // Replace with your queue name
+                            var queueName = "2EasyNetMQ.NewJob.Queue"; 
+                                // Replace with your queue name
                             bus.Advanced.QueueDeclare(queueName, durable: true, false, false);
                         
                             // Subscribe to messages
@@ -961,7 +1132,6 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                         
                             if (job.ShouldFaillOnWorkerTwo == false)
                             {
-                        
                                 // Note: EasyNetQ automatically ACKs messages by default.
                         
                                 Thread.Sleep(job.HowManySecondsWillJobTake * 500);
@@ -979,7 +1149,6 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                                 Console.WriteLine($" [x] Fail {job.Type}");
                                 Console.ForegroundColor = ConsoleColor.Gray;
                         
-                        
                                 // THIS WILL SEND MESSAGE TO DEAD-LETTER QUEQUE
                                 // DEFAULT NAME OF THIS QUEQUE IS
                                 // EasyNetQ_Default_Error_Queue
@@ -993,46 +1162,6 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
         </div>
     </section>
 
-
-
-
-
-    <section class="slide" style="background-color:black">
-        <figure>
-            <img class="cover" src="pictures/27.png" alt="blog">
-            <figcaption class="white">CW</figcaption>
-        </figure>
-    </section>
-    <section class="slide" style="background-color:black">
-        <figure>
-            <img class="cover" src="pictures/28.png" alt="blog">
-            <figcaption class="white">CW</figcaption>
-        </figure>
-    </section>
-    <section class="slide" style="background-color:black">
-        <figure>
-            <img class="cover" src="pictures/29.png" alt="blog">
-            <figcaption class="white">CW</figcaption>
-        </figure>
-    </section>
-    <section class="slide" style="background-color:black">
-        <figure>
-            <img class="cover" src="pictures/30.png" alt="blog">
-            <figcaption class="white">CW</figcaption>
-        </figure>
-    </section>
-    <section class="slide" style="background-color:black">
-        <figure>
-            <img class="cover" src="pictures/31.png" alt="blog">
-            <figcaption class="white">CW</figcaption>
-        </figure>
-    </section>
-    <section class="slide" style="background-color:black">
-        <figure>
-            <img class="cover" src="pictures/32.png" alt="blog">
-            <figcaption class="white">CW</figcaption>
-        </figure>
-    </section>
     <section class="slide" style="background-color:black">
         <figure>
             <img class="cover" src="pictures/33.png" alt="blog">
@@ -1051,6 +1180,7 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             <figcaption class="white">CW</figcaption>
         </figure>
     </section>
+    
     <section class="slide" style="background-color:black">
         <figure>
             <img class="cover" src="pictures/36.png" alt="blog">
@@ -1109,21 +1239,164 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">C# 9.0</h2>
+                <h2 class="headerCODE GG">RabbitMQ.Client Fanout</h2>
             </div>
             <div class="PlaceCodeHere ">
-                <pre style="font-size: 36px;overflow: hidden;  " class="language-csharp">
-                    <code style="line-height: 36px !important;">
-                        // C# 9
-                        Func getUserInput = Console.ReadLine;
-                        Action tellUser = (string s) => 
-                                        Console.WriteLine(s);
-                        Func waitForEnter = Console.ReadLine;
+                <pre style="font-size: 23px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 23px !important;">
+
+
+                        using RabbitMQ.Client;
+                        using System.Text;
                         
-                        tellUser("Please enter name");
-                        var name = getUserInput();
-                        tellUser($"Your name is {name}");
-                        waitForEnter();
+                        var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
+                        
+                        using (var connection = factory.CreateConnection())
+                        using (var channel = connection.CreateModel())
+                        {
+                            channel.ExchangeDeclare(exchange: &quot;RabbitMqDotNet6Tutorial.03&quot;,
+                                type: ExchangeType.Fanout,
+                                durable: true, autoDelete: false, arguments: null);
+                        
+                            while (true)
+                            {
+                                var message = &quot;Daj mi ocene 5!&quot;;
+                                var body = Encoding.UTF8.GetBytes(message);
+                                channel.BasicPublish(exchange: &quot;RabbitMqDotNet6Tutorial.03&quot;,
+                                    routingKey: &quot;&quot;,
+                                    basicProperties: null, body: body);
+                                Console.WriteLine(&quot; [x] Sent {0}&quot;, message);
+                                Console.ReadLine();
+                            }                      
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">RabbitMQ.Client Fanout</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 20px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 20px !important;">
+
+
+                        var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
+                        using (var connection = factory.CreateConnection())
+                        using (var channel = connection.CreateModel())
+                        {
+                            channel.ExchangeDeclare(exchange: &quot;RabbitMqDotNet6Tutorial.03&quot;,
+                                type: ExchangeType.Fanout, durable: true, autoDelete: false, arguments: null);
+                        
+                            var queueName = channel.QueueDeclare().QueueName;
+                            channel.QueueBind(queue: queueName,
+                                exchange:
+                                &quot;RabbitMqDotNet6Tutorial.03&quot;, routingKey: &quot;&quot;);
+                        
+                            Console.WriteLine(&quot; [*] Waiting for logs.&quot;);
+                        
+                            var consumer = new EventingBasicConsumer(channel);
+                            consumer.Received += (model, ea) =&gt;
+                            {
+                                byte[] body = ea.Body.ToArray();
+                                var message = Encoding.UTF8.GetString(body);
+                                Console.WriteLine(&quot; [x] {0}&quot;, message);
+                            };
+                            channel.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
+                        
+                            Console.WriteLine(&quot; Press [enter] to exit.&quot;);
+                            Console.ReadLine();
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">EasyNetQ Fanout</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 20px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 20px !important;">
+                        using EasyNetQ;
+                        using EasyNetQ.Topology;
+                        
+                        using (var bus = RabbitHutch.CreateBus(&quot;host=localhost&quot;))
+                        {
+                            var message = &quot;Daj mi ocene 5!&quot;;
+                        
+                            await bus.PubSub.PublishAsync&lt;String&gt;(
+                                    message
+                                );
+                        
+                            Console.WriteLine(&quot; [x] Sent {0}&quot;, message);
+                            Console.ReadLine();
+                        }
+                        
+                        
+                        static void AddCustom(IBus bus)
+                        {
+                            var exchange = bus.Advanced.ExchangeDeclare(
+                                &quot;3EasyNetQ.PublishToMany.Exchange&quot;, ExchangeType.Fanout);
+                            var queue = bus.Advanced.QueueDeclare
+                                (&quot;3EasyNetQ.PublishToMany.Queue&quot;,
+                                durable: true, exclusive: false, autoDelete: true);
+                            bus.Advanced.Bind(exchange, queue, &quot;#&quot;);
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">EasyNetQ Fanout</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 20px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 20px !important;">
+
+
+
+
+
+
+                        using EasyNetQ;
+                        using EasyNetQ.Topology;
+                        
+                        using (var bus = RabbitHutch.CreateBus("host=localhost"))
+                        {
+                            AddCustom(bus);
+                        
+                            await bus.PubSub.SubscribeAsync<string>("3EasyNetQ.SubscribeSecond", HandleTextMessage);
+                        
+                            Console.WriteLine("Listening for messages. Hit <return> to quit.");
+                            Console.ReadLine();
+                        }
+                        
+                        static void HandleTextMessage(string textMessage)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Got message: {0}", textMessage);
+                            Console.ResetColor();
+                        }
+                        
+                        static void AddCustom(IBus bus)
+                        {
+                            var exchange = bus.Advanced.ExchangeDeclare(
+                                "3EasyNetQ.PublishToMany.Exchange", ExchangeType.Fanout);
+                            var queue = bus.Advanced.QueueDeclare
+                                ("3EasyNetQ.PublishToMany.Queue",
+                                durable: true, exclusive: false, autoDelete: true);
+                            bus.Advanced.Bind(exchange, queue, "#");
+                        }
+                        
                     </code>
                 </pre>
             </div>
@@ -1139,21 +1412,402 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">C# 9.0</h2>
+                <h2 class="headerCODE GG">Rebus events RabbitMQ</h2>
             </div>
-            <div class="PlaceCodeHere ">
-                <pre style="font-size: 36px;overflow: hidden;  " class="language-csharp">
-                    <code style="line-height: 36px !important;">
-                        // C# 9
-                        Func getUserInput = Console.ReadLine;
-                        Action tellUser = (string s) => 
-                                        Console.WriteLine(s);
-                        Func waitForEnter = Console.ReadLine;
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 24px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        public class DocumentSavedEvent
+                        {
+                            private Guid id;
+                            private string filename;
                         
-                        tellUser("Please enter name");
-                        var name = getUserInput();
-                        tellUser($"Your name is {name}");
-                        waitForEnter();
+                            [JsonConstructor]
+                            public DocumentSavedEvent(Guid id, string filename)
+                            {
+                                this.Id = id;
+                                this.FileName = filename;
+                            }
+                        
+                            public Guid Id { get =&gt; id; set =&gt; id = value; }
+                            public string FileName { get =&gt; filename; set =&gt; filename = value; }
+                        }
+                        
+                        public class TradeRecordedEvent
+                        {
+                            private Guid id;
+                            private string commodity;
+                            private int quantity;
+                        
+                            [JsonConstructor]
+                            public TradeRecordedEvent(Guid id, string commodity, int quantity)
+                            {
+                                this.Id = id;
+                                this.Commodity = commodity;
+                                this.Quantity = quantity;
+                            }
+                        
+                            public Guid Id 
+                                { get =&gt; id; set =&gt; id = value; }
+                            public string Commodity 
+                                { get =&gt; commodity; set =&gt; commodity = value; }
+                            public int Quantity 
+                                { get =&gt; quantity; set =&gt; quantity = value; }
+                        }
+                        
+                        public class UserLoggedEvent
+                        {
+                            private Guid id;
+                            private string username;
+                        
+                            [JsonConstructor]
+                            public UserLoggedEvent(Guid id, string username)
+                            {
+                                this.Id = id;
+                                this.UserName = username;
+                            }
+                        
+                            public Guid Id { get =&gt; id; set =&gt; id = value; }
+                            public string UserName { get =&gt; username; set =&gt; username = value; }
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>    
+
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">Rebus events RabbitMQ</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 24px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        using Rebus.Activation;
+                        using Rebus.Bus;
+                        using Rebus.Config;
+                        
+                        using (var activator = new BuiltinHandlerActivator())
+                        {
+                            var bus = Configure.With(activator)
+                                .Transport(t =&gt; t.UseRabbitMqAsOneWayClient
+                                    (&quot;amqp://guest:guest@localhost:5672&quot;))
+                                .Start();
+                        
+                            await Task.Delay(500);
+                        
+                            Console.WriteLine(&quot;Trading is running&quot;);
+                        
+                            while (true)
+                            {
+                                Console.WriteLine(@&quot;
+                                    a) Publish TradeRecordedEvent
+                                    b) Publish DocumentSavedEvent
+                                    c) Publish UserLogedEvent
+                                    q) Quit&quot;);
+                        
+                                var keyChar = char.ToLower(Console.ReadKey(true).KeyChar);
+                        
+                                switch (keyChar)
+                                {
+                                    case &#39;a&#39;:
+                                        await SendTradeRecordedEventAsync(bus);
+                                        break;
+                                    case &#39;b&#39;:
+                                        await SendDocumentSavedAsync(bus);
+                                        break;
+                                    case &#39;c&#39;:
+                                        await SendUserLoggedEventAsync(bus);
+                                        break;
+                                    case &#39;q&#39;:
+                                        break;
+                                    default:
+                                        Console.WriteLine(&quot;There&#39;s no option ({0})&quot;, keyChar);
+                                        break;
+                                }
+                            }
+                        
+                        }
+                                        
+                        
+                        async Task SendTradeRecordedEventAsync(IBus bus)
+                        {
+                            Console.WriteLine(&quot;Please enter new trade details&quot;);
+                            Console.WriteLine(&quot; commodity &gt; &quot;);
+                            var commodity = Console.ReadLine();
+                            if (string.IsNullOrWhiteSpace(commodity)) return;
+                        
+                            int quantity;
+                            Console.WriteLine(&quot; quantity &gt; &quot;);
+                            while (!int.TryParse(Console.ReadLine(), out quantity)) ;
+                        
+                            var tradeEvent = new TradeRecordedEvent
+                                (Guid.NewGuid(), commodity, quantity);
+                            await bus.Publish(tradeEvent);
+                        
+                            Console.WriteLine(&quot;Sended tradeEvent&quot;);
+                        }
+                        
+                        async Task SendDocumentSavedAsync(IBus bus)
+                        {
+                            Console.WriteLine(&quot;Please enter new document details&quot;);
+                            Console.WriteLine(&quot; document name &gt; &quot;);
+                            var documentName = Console.ReadLine();
+                            if (string.IsNullOrWhiteSpace(documentName)) return;
+                        
+                            var docEvent = new DocumentSavedEvent
+                                (Guid.NewGuid(), documentName);
+                            await bus.Publish(docEvent);
+                        
+                            Console.WriteLine(&quot;Sended docEvent&quot;);
+                        }
+                        
+                        async Task SendUserLoggedEventAsync(IBus bus)
+                        {
+                            Console.WriteLine(&quot;Please enter new trade details&quot;);
+                            Console.WriteLine(&quot; Username &gt; &quot;);
+                            var username = Console.ReadLine();
+                            if (string.IsNullOrWhiteSpace(username)) return;
+                        
+                            var userEvent = new UserLoggedEvent(Guid.NewGuid(), username);
+                            await bus.Publish(userEvent);
+                        
+                            Console.WriteLine(&quot;Sended userEvent&quot;);
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>    
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">Rebus events RabbitMQ</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 20px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 20px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        
+
+
+
+
+                        using Rebus.Activation;
+                        using Rebus.Config;
+                        using Rebus.Routing.TypeBased;
+                        
+                        using (var activator = new BuiltinHandlerActivator())
+                        {
+                            activator.Register(() =&gt; new TradeRecordedEventHandler());
+                            activator.Register(() =&gt; new UserLoggedEventHandler());
+                            activator.Register(() =&gt; new DocumentSavedEventHandler());
+                        
+                            var bus = Configure.With(activator)
+                                .Logging
+                                    (l =&gt; l.ColoredConsole(minLevel: Rebus.Logging.LogLevel.Warn))
+                                .Transport
+                                    (t =&gt; t.UseRabbitMq(&quot;amqp://guest:guest@localhost:5672&quot;,
+                                     &quot;Rebus.SystemTooBig.Trading&quot;))
+                                .Routing
+                                    (r =&gt; r.TypeBased().
+                                    MapAssemblyOf&lt;TradeRecordedEvent&gt;(&quot;Rebus.SystemTooBig.Trading&quot;))
+                                .Start();
+                        
+                            await bus.Subscribe&lt;TradeRecordedEvent&gt;();
+                            await bus.Subscribe&lt;UserLoggedEvent&gt;();
+                            await bus.Subscribe&lt;DocumentSavedEvent&gt;();
+                        
+                            Console.WriteLine(&quot;Invoicing is running - press Enter to quite&quot;);
+                            Console.ReadKey();
+                        }
+                        
+                        internal class DocumentSavedEventHandler : IHandleMessages&lt;DocumentSavedEvent&gt;
+                        {
+                            public DocumentSavedEventHandler()
+                            {
+                            }
+                        
+                            public async Task Handle(DocumentSavedEvent message)
+                            {
+                                Console.WriteLine
+                                    ($&quot;Document was saved: {message.Id} ({message.FileName})&quot;);
+                            }
+                        }
+                        
+                        internal class TradeRecordedEventHandler : IHandleMessages&lt;TradeRecordedEvent&gt;
+                        {
+                            public TradeRecordedEventHandler()
+                            {
+                            }
+                        
+                            public async Task Handle(TradeRecordedEvent message)
+                            {
+                                Console.WriteLine
+                                    ($&quot;Invocing trade: {message.Id} ({message.Quantity} x {message.Commodity})&quot;);
+                            }
+                        }
+                        
+                        internal class UserLoggedEventHandler : IHandleMessages&lt;UserLoggedEvent&gt;
+                        {
+                            public UserLoggedEventHandler()
+                            {
+                            }
+                        
+                            public async Task Handle(UserLoggedEvent message)
+                            {
+                                Console.WriteLine
+                                    ($&quot;User was logged: {message.Id} ({message.UserName})&quot;);
+                            }
+                        }
+                        
                     </code>
                 </pre>
             </div>
@@ -1317,21 +1971,282 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">C# 9.0</h2>
+                <h2 class="headerCODE GG">Confluent.Kafka;</h2>
             </div>
-            <div class="PlaceCodeHere ">
-                <pre style="font-size: 36px;overflow: hidden;  " class="language-csharp">
-                    <code style="line-height: 36px !important;">
-                        // C# 9
-                        Func getUserInput = Console.ReadLine;
-                        Action tellUser = (string s) => 
-                                        Console.WriteLine(s);
-                        Func waitForEnter = Console.ReadLine;
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 21px !important;">
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        using _1Kafka.Confluent.Common;
+                        using Confluent.Kafka;
+                        using System.Net;
+                        using System.Text.Json;
                         
-                        tellUser("Please enter name");
-                        var name = getUserInput();
-                        tellUser($"Your name is {name}");
-                        waitForEnter();
+                        string bootstrapServers = &quot;localhost:9092&quot;;
+                        string topic = &quot;1Kafka.Confluent.Test&quot;;
+                        char c = &#39; &#39;;
+                        int messageId = 0;
+                        
+                        while (c != &#39;q&#39;)
+                        {
+                            var messagerequest = GetMessageRequest();
+                            string json = JsonSerializer.Serialize(messagerequest);
+                            await SendMessageRequest(topic, json);
+                        
+                            Console.WriteLine(&quot;Press any key to continue&quot;);
+                            Console.WriteLine(&quot;Press &#39;q&#39; to exit&quot;);
+                            c = Console.ReadKey().KeyChar;
+                            Console.WriteLine(&quot;&quot;);
+                        }
+                        
+                        MessageRequest GetMessageRequest()
+                        {
+                            string message = &quot;&quot;;
+                            int color = -1;
+                            while (string.IsNullOrWhiteSpace(message) || color == -1)
+                            {
+                                Console.WriteLine(&quot;Write Your Message&quot;);
+                                message = Console.ReadLine();
+                                Console.WriteLine(&quot;Choose Color&quot;);
+                        
+                                for (int i = 0; i &lt; 16; i++)
+                                {
+                                    Console.ForegroundColor = (ConsoleColor)i;
+                                    Console.WriteLine($&quot;{i} . {((ConsoleColor)i).ToString()}&quot;);
+                        
+                                }
+                                Console.ResetColor();
+                        
+                                int colora;
+                                bool check = int.TryParse(Console.ReadLine(), out colora);
+                        
+                                if (!check)
+                                    continue;
+                                color = colora;
+                            }
+                            messageId++;
+                            MessageRequest messageRequest = new()
+                            {
+                                Color = color,
+                                Message = message,
+                                Id = messageId,
+                                UniqueId = Guid.NewGuid(),
+                                StartProducer = DateTime.Now
+                            };
+                        
+                            return messageRequest;
+                        }
+                        
+                        
+                        async Task&lt;bool&gt; SendMessageRequest(string topic, string message)
+                        {
+                            ProducerConfig config = new ProducerConfig
+                            {
+                                BootstrapServers = bootstrapServers,
+                                ClientId = Dns.GetHostName(),
+                        
+                            };
+                        
+                            try
+                            {
+                                using (var producer = new ProducerBuilder
+                                &lt;Null, string&gt;(config).Build())
+                                {
+                        
+                        
+                                    var result = await producer.ProduceAsync
+                                    (topic, new Message&lt;Null, string&gt;
+                                    {
+                                        Value = message
+                                    });
+                        
+                                    Console.WriteLine($&quot;Delivery Timestamp:{result.Timestamp.UtcDateTime}&quot;);
+                                    return await Task.FromResult(true);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($&quot;Error occured: {ex.Message}&quot;);
+                            }
+                        
+                            return await Task.FromResult(false);
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section> 
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">Confluent.Kafka</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 21px !important;">
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        using _1Kafka.Confluent.Common;
+                        using Confluent.Kafka;
+                        using System.Net;
+                        using System.Text.Json;
+                        
+                        int unique = 5;
+                        
+                        string topic = &quot;1Kafka.Confluent.Test&quot;;
+                        string groupId = &quot;1Kafka.Confluent.Test_Group_&quot; + unique.ToString();
+                        string bootstrapServers = &quot;localhost:9092&quot;;
+                        
+                        Console.WriteLine($&quot;{topic} GROUP ID : {groupId}&quot;);
+                        
+                        var config = new ConsumerConfig
+                        {
+                            GroupId = groupId,
+                            BootstrapServers = bootstrapServers,
+                            AutoOffsetReset = AutoOffsetReset.Earliest
+                        };
+                        
+                        try
+                        {
+                            using (var consumerBuilder = new ConsumerBuilder
+                            &lt;Ignore, string&gt;(config).Build())
+                            {
+                                consumerBuilder.Subscribe(topic);
+                                var cancelToken = new CancellationTokenSource();
+                        
+                                try
+                                {
+                                    while (true)
+                                    {
+                                        var consumer = consumerBuilder.Consume
+                                           (cancelToken.Token);
+                                        var messageRequest = JsonSerializer.Deserialize
+                                            &lt;MessageRequest&gt;
+                                                (consumer.Message.Value);
+                        
+                                        Console.WriteLine($&quot;\nProducerStarted: {messageRequest.StartProducer}&quot;);
+                                        Console.WriteLine($&quot;\nProcessing Number: {messageRequest.Id}&quot;);
+                                        Console.WriteLine($&quot;Processing UniqueId: {messageRequest.UniqueId}&quot;);
+                                        if (messageRequest.Color &gt;= 0 &amp;&amp; messageRequest.Color &lt;= 15)
+                                            Console.ForegroundColor = (ConsoleColor)messageRequest.Color;
+                                        Console.WriteLine(messageRequest.Message);
+                                        Console.ResetColor();
+                                        Console.WriteLine(&quot;&quot;);
+                                    }
+                                }
+                                catch (OperationCanceledException)
+                                {
+                                    consumerBuilder.Close();
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
                     </code>
                 </pre>
             </div>
@@ -1348,21 +2263,161 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">C# 9.0</h2>
+                <h2 class="headerCODE GG">KafkaFlow</h2>
             </div>
-            <div class="PlaceCodeHere ">
-                <pre style="font-size: 36px;overflow: hidden;  " class="language-csharp">
-                    <code style="line-height: 36px !important;">
-                            // C# 9
-                            Func getUserInput = Console.ReadLine;
-                            Action tellUser = (string s) => 
-                                            Console.WriteLine(s);
-                            Func waitForEnter = Console.ReadLine;
-                            
-                            tellUser("Please enter name");
-                            var name = getUserInput();
-                            tellUser($"Your name is {name}");
-                            waitForEnter();
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 21px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        using KafkaFlow;
+                        using KafkaFlow.Producers;
+                        using KafkaFlow.Serializer;
+                        
+                        var builder = WebApplication.CreateBuilder(args);
+                        
+                        builder.Services.AddKafka(
+                            kafka =&gt; kafka
+                                .AddCluster(cluster =&gt;
+                                {
+                                    const string topicName = &quot;1KafkaFlow&quot;;
+                                    cluster
+                                        .WithBrokers(new[] { &quot;localhost:9092&quot; })
+                                        .CreateTopicIfNotExists(topicName, 
+                                            numberOfPartitions: 3, replicationFactor: 3)
+                                        .AddProducer(
+                                            name: &quot;1KafkaFlow.Producer&quot;,
+                                            producer =&gt; producer
+                                                .DefaultTopic(topicName)
+                                                .AddMiddlewares(middlewares =&gt;
+                                                    middlewares
+                                                        .AddSerializer&lt;JsonCoreSerializer&gt;()));
+                                })
+                        );
+                        
+                        var app = builder.Build();
+                        
+                        app.MapPost(&quot;/add&quot;, RequestHandler.HandleAsync);
+                        
+                        app.Run();
+                        
+                        // Handler
+                        public static class RequestHandler
+                        {
+                            public static async Task&lt;IResult&gt; HandleAsync(
+                                IProducerAccessor producerAccessor,
+                                AddTaskRequest request, CancellationToken cancellationToken)
+                            {
+                                var producer = producerAccessor.GetProducer(&quot;1KafkaFlow.Producer&quot;);
+                        
+                                await producer.ProduceAsync(
+                                    null,
+                                    request
+                                );
+                        
+                                return Results.Accepted();
+                            }
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">KafkaFlow</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 21px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        using KafkaFlow;
+                        using KafkaFlow.Serializer;
+                        using Microsoft.Extensions.DependencyInjection;
+                        using Microsoft.Extensions.Logging;
+                        
+                        const string topicName = &quot;1KafkaFlow&quot;;
+                        int unique = 5;
+                        string groupId = &quot;1KafkaFlow_Group_&quot; + unique.ToString();
+                        var services = new ServiceCollection();
+                        
+                        services.AddKafkaFlowHostedService(
+                            kafka =&gt; kafka
+                                .UseMicrosoftLog()
+                                .AddCluster(cluster =&gt;
+                                {
+                                    cluster
+                                        .WithBrokers(new[] { &quot;localhost:9092&quot; })
+                                        .AddConsumer(consumer =&gt;
+                                            consumer
+                                                .Topic(topicName)
+                                                .WithGroupId(groupId)
+                                                .WithBufferSize(100)
+                                                .WithWorkersCount(3)
+                                                .WithAutoOffsetReset(KafkaFlow.AutoOffsetReset.Earliest)
+                                                .AddMiddlewares(middlewares =&gt; middlewares
+                                                    .AddDeserializer&lt;JsonCoreDeserializer&gt;()
+                                                    .AddTypedHandlers(handlers =&gt;
+                                                        handlers.AddHandler&lt;AddTaskHandler&gt;()
+                                                    )
+                                                )
+                                        );
+                                })
+                        );
+                        
+                        services.AddLogging(configure =&gt; configure.AddConsole());
+                        
+                        var provider = services.BuildServiceProvider();
+                        var bus = provider.CreateKafkaBus();
+                        
+                        await bus.StartAsync();
+                        
+                        Console.WriteLine(&quot;Press key to exit&quot;);
+                        Console.ReadKey();
                     </code>
                 </pre>
             </div>
@@ -1387,7 +2442,12 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
         </figure>
     </section>
 
-
+    <section class="slide" style="background-color:black">
+        <figure>
+            <img class="cover" src="pictures/WDI24-212-OMST-06.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
 
     <!-- <div class="progress"></div> -->
     <footer class="badge badge-top-left">
